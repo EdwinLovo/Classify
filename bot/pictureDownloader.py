@@ -13,9 +13,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
 
-TRAIN_PATH = "D:/Development/Classify/classify_dataset/train/"
-TEST_PATH = "D:/Development/Classify/classify_dataset/test/"
-
+DATASET_PATH = "D:/Development/Classify/classify_dataset/"
+CATEGORIES = ["rubik's cube"]
 
 def createFolder(path, folder):
     dirPath = os.path.join(path, folder)
@@ -49,29 +48,40 @@ def downloadPictures(browser, name):
     imageContainers = browser.find_elements_by_xpath(
         '//div[@class="tile  tile--img  has-detail"]')
 
-    trainPath = createFolder(
-        "D:/Development/Classify/classify_dataset/train/", name)
-    print(trainPath)
-    testPath = createFolder(
-        "D:/Development/Classify/classify_dataset/test/", name)
-    print(testPath)
+    datasetPath = createFolder(
+        DATASET_PATH, name)
+    print(datasetPath)
 
     i = 0
     for container in imageContainers:
         try:
             url = container.find_element_by_xpath(
                 './/img').get_attribute('src')
-            print("Image ", i, " url:", url)
+            print("Image #", i, ", url:", url)
             imageContent = requests.get(url).content
-            saveImage(trainPath, i, imageContent)
-            if (i < 150):
-                saveImage(trainPath, i, imageContent)
-            elif(i >= 150 and i < 200):
-                saveImage(testPath, i, imageContent)
+            saveImage(datasetPath, i, imageContent)
         except:
             print('Error')
 
         i += 1
+
+def openBrowser(browser):
+    mainSearchBar = WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, '//input[@id="search_form_input_homepage"]'))
+    )
+    mainSearchBar.send_keys('images')
+
+    mainSearchButton = browser.find_element_by_xpath(
+        '//input[@id="search_button_homepage"]')
+    mainSearchButton.click()
+
+    imagesSection = WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, '//a[@data-zci-link="images"]'))
+    )
+    imagesSection.click()
+
 
 
 opts = Options()
@@ -80,26 +90,11 @@ opts.add_argument(
 
 browser = webdriver.Chrome(
     'D:/Development/Classify/bot/drivers/chromedriver.exe', options=opts)
-
 browser.get('https://duckduckgo.com/')
 
 
-mainSearchBar = WebDriverWait(browser, 10).until(
-    EC.presence_of_element_located(
-        (By.XPATH, '//input[@id="search_form_input_homepage"]'))
-)
-mainSearchBar.send_keys('images')
 
-mainSearchButton = browser.find_element_by_xpath(
-    '//input[@id="search_button_homepage"]')
-mainSearchButton.click()
+openBrowser(browser)
 
-imagesSection = WebDriverWait(browser, 10).until(
-    EC.presence_of_element_located(
-        (By.XPATH, '//a[@data-zci-link="images"]'))
-)
-imagesSection.click()
-
-downloadPictures(browser, "dog")
-downloadPictures(browser, "cat")
-downloadPictures(browser, "lion")
+for category in CATEGORIES:
+    downloadPictures(browser, category)
